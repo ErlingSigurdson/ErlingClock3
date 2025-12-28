@@ -103,18 +103,24 @@ uButton btn_3(BTN_3_PIN);
 
 /************** FUNCTION PROTOTYPES *************/
 
-/*--- RTC interfacing and time data processing ---*/
+/*--- Multiplexing-friendly I/O wrappers ---*/
 
-// Interface.
-void get_time(DS3231& RTC, current_time_t& CurrentTime);
-void set_time(DS3231& RTC, current_time_t& CurrentTime);
+namespace mp_safe_io {
+    // I2C interface.
+    void copy_rtc_time(DS3231& RTC, current_time_t& CurrentTime);
+    void set_rtc_time(DS3231& RTC, current_time_t& CurrentTime);
 
-// Helpers.
-void read_time(DS3231& RTC, current_time_t& CurrentTime);
-void decompose_time(current_time_t& CurrentTime);
+    // I2C helpers.
+    void read_time(DS3231& RTC, current_time_t& CurrentTime);
+
+    // UART interface.
+    void serial_print(const char* msg, bool add_newline);
+}
 
 
 /*--- Misc ---*/
+
+void decompose_time(current_time_t& CurrentTime);
 void time_setting_mode(bool& time_setting_mode_flag, DS3231& RTC, current_time_t& CurrentTime);
 
 
