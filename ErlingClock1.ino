@@ -419,6 +419,14 @@ void time_setting_mode(DS3231& RTC, current_time_t& CurrentTime,
                 uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(CurrentTime.minutes.tens);
                 uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(CurrentTime.minutes.ones);
 
+                // Handy for debugging.
+                /*
+                uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(CurrentTime.minutes.tens);
+                uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(CurrentTime.minutes.ones);
+                uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(CurrentTime.seconds.tens);
+                uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(CurrentTime.seconds.ones);
+                */
+
                 Drv7Seg.set_glyph_to_pos(seg_byte_pos_1, Drv7SegPos1);
                 Drv7Seg.set_glyph_to_pos(seg_byte_pos_2, Drv7SegPos2);
                 Drv7Seg.set_glyph_to_pos(seg_byte_pos_3, Drv7SegPos3);
