@@ -127,7 +127,8 @@ namespace mp_safe_io {
 void decompose_rtc_time(current_time_t& CurrentTime);
 void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                        uButton& btn_1, uButton& btn_2, uButton& btn_3,
-                       bool& time_setting_mode_flag);
+                       bool& time_setting_mode_flag
+                      );
 
 
 /******************* FUNCTIONS ******************/
@@ -187,7 +188,6 @@ void loop()
     static current_time_t CurrentTime = {};  // Initialize with all-zero values.
 
     static bool interface_begin_flag = false;
-
     if (!interface_begin_flag) {
         Wire.begin();
         RTC.begin();
@@ -233,6 +233,7 @@ void loop()
 
     if (update_i2c_due) {
         mp_safe_io::read_rtc_time(RTC, CurrentTime);
+        mp_safe_io::serial_print("ErlingClock1 sketch version: 2.0.5\r\n");
         update_i2c_due = false;
     }
 
@@ -332,9 +333,9 @@ void mp_safe_io::read_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime)
 
 void mp_safe_io::write_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime)
 {
-    Datime dt(2001, 1, 1,  /* Arbitrary but realistic placeholders.
+    Datime dt(2001, 1, 1,  /* Arbitrary placeholders.
                             * Date must NOT be 01.01.2000, because for some reason setTime() is programmed to
-                            * return false early in case the date is Y2K month 1 day 1 (Alex Gyver's design decision).
+                            * return false early in case the date is Y2K month 1 day 1 (AlexGyver's design decision).
                             */
               static_cast<uint8_t>(CurrentTime.raw_hours),
               static_cast<uint8_t>(CurrentTime.raw_minutes),
@@ -388,10 +389,11 @@ void decompose_rtc_time(current_time_t& CurrentTime)
 
 void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                        uButton& btn_1, uButton& btn_2, uButton& btn_3,
-                       bool& time_setting_mode_flag)
+                       bool& time_setting_mode_flag
+                      )
 {
     CurrentTime = {};  // Assign all-zero values.
-    bool update_glyphs_due = true;
+    bool update_output_due = true;
 
     while (time_setting_mode_flag) {
         Drv7Seg.output_all();
@@ -411,7 +413,7 @@ void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                 CurrentTime.raw_hours++;
                 // Handy for debugging.
                 //CurrentTime.raw_minutes++;
-                update_glyphs_due = true;
+                update_output_due = true;
             }
         }
 
@@ -420,7 +422,7 @@ void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                 CurrentTime.raw_minutes++;
                 // Handy for debugging.
                 //CurrentTime.raw_seconds++;
-                update_glyphs_due = true;
+                update_output_due = true;
             }
         }    
 
@@ -439,7 +441,7 @@ void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
             CurrentTime.raw_hours = 0;
         }
 
-        if (update_glyphs_due) {
+        if (update_output_due) {
                 decompose_rtc_time(CurrentTime);
 
                 uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(CurrentTime.hours.tens);
@@ -460,7 +462,7 @@ void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                 Drv7Seg.set_glyph_to_pos(seg_byte_pos_3, Drv7SegPos3);
                 Drv7Seg.set_glyph_to_pos(seg_byte_pos_4, Drv7SegPos4);
 
-                update_glyphs_due = false;
+                update_output_due = false;
         }
     }
 }
