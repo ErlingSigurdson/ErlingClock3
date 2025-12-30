@@ -23,8 +23,7 @@
 #include <uButton.h>
 
 // RTC interfacing.
-#include <Wire.h>
-#include <DS3231.h>
+#include <GyverDS3231Min.h>
 
 
 /*--- Drv7SegQ595 library API parameters ---*/
@@ -109,8 +108,8 @@ struct current_time_t {
 
 namespace mp_safe_io {
     // I2C.
-    void read_rtc_time(DS3231& RTC, current_time_t& CurrentTime);
-    void write_rtc_time(DS3231& RTC, current_time_t& CurrentTime);
+    void read_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime);
+    void write_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime);
 
     // UART.
     void serial_print(const char* msg);
@@ -125,7 +124,7 @@ namespace mp_safe_io {
 /*--- Misc ---*/
 
 void decompose_rtc_time(current_time_t& CurrentTime);
-void time_setting_mode(DS3231& RTC, current_time_t& CurrentTime,
+void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                        uButton& btn_1, uButton& btn_2, uButton& btn_3,
                        bool& time_setting_mode_flag);
 
@@ -141,8 +140,6 @@ void setup()
     #ifdef SERIAL_OUTPUT_ENABLED
     Serial.begin(BAUD_RATE);
     #endif
-    
-    Wire.begin();
 
 
     /*--- Byte mapping ---*/
@@ -183,8 +180,21 @@ void setup()
 
 void loop()
 {
-    static DS3231 RTC;
+    /*--- Interface initialization, continued ---*/
+
+    static GyverDS3231Min RTC;
     static current_time_t CurrentTime = {};  // Initialize with all-zero values.
+
+    static bool interface_begin_flag = false;
+
+    if (!interface_begin_flag) {
+        Wire.begin();
+        RTC.begin();
+        interface_begin_flag = true;
+    }
+
+
+    /*--- Button initialization ---*/
 
     static uButton btn_1(BTN_1_PIN);
     static uButton btn_2(BTN_2_PIN);
@@ -308,25 +318,42 @@ void loop()
 
 /*--- Extra functions ---*/
 
-void mp_safe_io::read_rtc_time(DS3231& RTC, current_time_t& CurrentTime)
+void mp_safe_io::read_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime)
 {
-    static bool h12_flag = false;
-    static bool pm_time_flag = false;
+    Drv7Seg.output_all();
+    Datime dt = RTC.getTime();
+    Drv7Seg.output_all();
 
-    Drv7Seg.output_all();
-    CurrentTime.raw_hours   = static_cast<uint32_t>(RTC.getHour(h12_flag, pm_time_flag));
-    Drv7Seg.output_all();
-    CurrentTime.raw_minutes = static_cast<uint32_t>(RTC.getMinute());
-    Drv7Seg.output_all();
-    CurrentTime.raw_seconds = static_cast<uint32_t>(RTC.getSecond());
-    Drv7Seg.output_all();
+    CurrentTime.raw_hours   = static_cast<uint32_t>(dt.hour);
+    CurrentTime.raw_minutes = static_cast<uint32_t>(dt.minute);
+    CurrentTime.raw_seconds = static_cast<uint32_t>(dt.second);
 }
 
-void mp_safe_io::write_rtc_time(DS3231& RTC, current_time_t& CurrentTime)
+void mp_safe_io::write_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime)
 {
-    RTC.setHour(CurrentTime.raw_hours);
-    RTC.setMinute(CurrentTime.raw_minutes);
-    RTC.setSecond(CurrentTime.raw_seconds);
+    Datime dt(2001, 1, 1,  /* Arbitrary but realistic placeholders.
+                            * Date must NOT be 01.01.2000, because for some reason setTime() is programmed to
+                            * return false early in case the date is Y2K month 1 day 1 (Alex Gyver's design decision).
+                            */
+              static_cast<uint8_t>(CurrentTime.raw_hours),
+              static_cast<uint8_t>(CurrentTime.raw_minutes),
+              static_cast<uint8_t>(CurrentTime.raw_seconds)
+             );
+
+    Drv7Seg.output_all();
+    RTC.setTime(dt);
+    Drv7Seg.output_all();
+
+    // Another variant, pretty much equivalent.
+    /*
+    Drv7Seg.output_all();
+    RTC.setTime(2001, 1, 1,  // Meaningless, but realistic placeholders.
+                static_cast<uint8_t>(CurrentTime.raw_hours),
+                static_cast<uint8_t>(CurrentTime.raw_minutes),
+                static_cast<uint8_t>(CurrentTime.raw_seconds)
+               );
+    Drv7Seg.output_all();
+    */
 }
 
 void mp_safe_io::serial_print(const char *msg)
@@ -358,7 +385,7 @@ void decompose_rtc_time(current_time_t& CurrentTime)
     CurrentTime.seconds.ones = CurrentTime.raw_seconds % 10;
 }
 
-void time_setting_mode(DS3231& RTC, current_time_t& CurrentTime,
+void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                        uButton& btn_1, uButton& btn_2, uButton& btn_3,
                        bool& time_setting_mode_flag)
 {
