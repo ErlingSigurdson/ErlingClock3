@@ -16,13 +16,14 @@
 
 // Display driver.
 #include <Drv7SegQ595.h>
+
+// Byte mapping.
 #include <SegMap595.h>
 
 // Buttons.
-#include <GyverIO.h>
 #include <uButton.h>
 
-// RTC interfacing.
+// DS3231 RTC interfacing.
 #include <GyverDS3231Min.h>
 
 
@@ -70,7 +71,7 @@
 
 /*--- UART ---*/
 
-#define SERIAL_OUTPUT_ENABLED  // Comment out or delete to suppress the UART output.
+#define SERIAL_OUTPUT_ENABLED  // Comment out to suppress the UART output.
 #define BAUD_RATE 115200
 
 
@@ -277,8 +278,8 @@ void loop()
         update_output_due = false;
     }
 
-    /* Basic output call spot (it's not the only one, output is also commenced
-     * before and after every UART and I2C I/O operation).
+    /* Basic output call spot (it's not the only one, output is also
+     * commenced before and after every UART and I2C I/O operation).
      */
     Drv7Seg.output_all();
 
@@ -347,7 +348,7 @@ void mp_safe_io::write_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime
     // Another variant, pretty much equivalent.
     /*
     Drv7Seg.output_all();
-    RTC.setTime(2001, 1, 1,  // Meaningless, but realistic placeholders.
+    RTC.setTime(2001, 1, 1,
                 static_cast<uint8_t>(CurrentTime.raw_hours),
                 static_cast<uint8_t>(CurrentTime.raw_minutes),
                 static_cast<uint8_t>(CurrentTime.raw_seconds)
