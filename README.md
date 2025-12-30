@@ -8,9 +8,9 @@ I made this clock and wrote a rookie sketch that worked somehow. Since I'd like 
 working, usable and maintainable, I wrote this updated firmware just to know what my clock is running.
 If you like the code for some reason, feel free to use it as you please.
 
-![1.png](extras/images/1.png)
+![1.jpg](extras/images/1.jpg)
 
-![2.png](extras/images/2.png)
+![2.jpg](extras/images/2.jpg)
 
 ![3.jpg](extras/images/3.jpg)
 
