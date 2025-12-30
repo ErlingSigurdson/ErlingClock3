@@ -1,11 +1,26 @@
 # Overview
 
+## Concept
+
+I made this clock in 2022 and wrote a rookie sketch that worked somehow. Since I'd like to keep this device
+working, usable and maintainable, I wrote this updated firmware just to know what my clock is running.
+
+![1.png](extras/images/1.png)
+
+![2.png](extras/images/1.png)
+
+![3.jpg](extras/images/1.jpg)
+
 ## Schematic
 
-Not perfect: base drive resistors should have higher values, pull-down resistors should be added to bases, etc.
+Far from perfect: base drive resistors should have higher values, pull-down resistors should be added to bases, etc.
 But hey, it works. 
 
 ![circuit_diagram_(schematic).png](extras/images/circuit_diagram_(schematic).png)
+
+## Dependencies
+
+See the sketch file includes, see the links below.
 
 ## Links
 
