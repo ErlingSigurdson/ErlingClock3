@@ -360,12 +360,16 @@ void mp_safe_io::write_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime
 
 void mp_safe_io::serial_print(const char *msg)
 {
+    Drv7Seg.output_all();
     Serial.print(msg);
+    Drv7Seg.output_all();
 }
 
 void mp_safe_io::serial_print(size_t val)
 {
+    Drv7Seg.output_all();
     Serial.print(val);
+    Drv7Seg.output_all();
 }
 
 #if defined(UINT32_MAX) && defined(SIZE_MAX) && (UINT32_MAX > SIZE_MAX)
