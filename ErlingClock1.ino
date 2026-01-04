@@ -233,7 +233,7 @@ void loop()
 
     if (update_i2c_due) {
         mp_safe_io::read_rtc_time(RTC, CurrentTime);
-        mp_safe_io::serial_print("ErlingClock1 sketch version: 2.0.6\r\n");
+        mp_safe_io::serial_print("ErlingClock1 sketch version: 2.0.7\r\n");
         update_i2c_due = false;
     }
 
