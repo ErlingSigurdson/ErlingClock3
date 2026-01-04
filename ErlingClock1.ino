@@ -255,7 +255,7 @@ void loop()
 
         // Dot-segment blink.
         if (CurrentTime.raw_seconds % 2) {
-            seg_byte_pos_2 = SegMap595.toggle_dot_bit(seg_byte_pos_2);
+            seg_byte_pos_2 = SegMap595.toggle_dot(seg_byte_pos_2);
         }
 
         Drv7Seg.set_glyph_to_pos(seg_byte_pos_1, Drv7SegPos1);
