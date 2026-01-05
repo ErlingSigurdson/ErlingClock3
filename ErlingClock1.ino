@@ -3,7 +3,7 @@
 /**
  * Filename: ErlingClock1.ino
  * ----------------------------------------------------------------------------|---------------------------------------|
- * Purpose:  A main file of a firmware (an Arduino sketch) written for
+ * Purpose:  The main file of the firmware (the Arduino sketch) written for
  *           the Arduino Pro Mini-based electronic clock I made in 2022.
  * ----------------------------------------------------------------------------|---------------------------------------|
  * Notes:
