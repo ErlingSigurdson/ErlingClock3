@@ -41,6 +41,10 @@ CR2032 battery, I followed a common advice and removed the diode and the resisto
 
 See the sketch file include directives, see the links below.
 
+## License
+
+This stuff is licensed under the **MIT License** (see `LICENSE` [here](LICENSE)).
+
 ## Links
 
 ### Git repositories
@@ -75,6 +79,9 @@ I wrote on this project in 2022. The pinned sketch is legacy (consider it to be 
 overall writing doesn't satisfy me anymore, but I don't care enough to do something about this one.
 * File archive: [storage #1](https://disk.yandex.ru/d/ZkYEhKhuj1vNvg), [storage #2](https://drive.google.com/drive/folders/1e0xsmpC7yQtPBWnrMO5NivBALOWTDool?usp=sharing).
 
-## License
+## Contact details
 
-This stuff is licensed under the **MIT License** (see `LICENSE` [here](LICENSE)).
+**Author** — Dmitriy Efimov aka Erling Sigurdson
+* <efimov-d-v@yandex.ru>
+* <erlingsigurdson1@gmail.com>
+* Telegram: @erlingsigurdson
