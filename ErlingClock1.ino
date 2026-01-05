@@ -75,6 +75,15 @@
 #define BAUD_RATE 115200
 
 
+/*--- Misc ---*/
+
+// A pair of macros for turning an argument into a string.
+#define STRINGIFY(x) INTERMEDIATE_STRINGIFY(x)
+#define INTERMEDIATE_STRINGIFY(x) #x
+
+#define VERSION 2.0.8
+
+
 /****************** DATA TYPES ******************/
 
 struct CurrentTime {
@@ -249,7 +258,7 @@ void loop()
 
     if (update_i2c_due) {
         mp_safe_io::read_rtc_time(RTC, current_time);
-        mp_safe_io::serial_print("ErlingClock1 sketch version: 2.0.7\r\n");
+        mp_safe_io::serial_print("ErlingClock1 sketch version: " STRINGIFY(VERSION) "\r\n");
         update_i2c_due = false;
     }
 
