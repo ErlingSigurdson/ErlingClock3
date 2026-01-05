@@ -127,6 +127,7 @@ namespace mp_safe_io {
 void decompose_rtc_time(current_time_t& CurrentTime);
 void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                        uButton& btn_1, uButton& btn_2, uButton& btn_3,
+                       bool& dark_mode_flag,
                        bool& time_setting_mode_flag
                       );
 
@@ -202,6 +203,13 @@ void loop()
     static uButton btn_3(BTN_3_PIN);
 
 
+    /*--- Dark mode control ---*/
+
+    static bool dark_mode_flag = false;
+    constexpr uint8_t blank = 0;
+    static uint8_t only_dot_on = SegMap595.turn_on_dot(blank);
+    
+
     /*--- Counter and value update trigger ---*/
 
     // Counter.
@@ -258,10 +266,17 @@ void loop()
             seg_byte_pos_2 = SegMap595.toggle_dot(seg_byte_pos_2);
         }
 
-        Drv7Seg.set_glyph_to_pos(seg_byte_pos_1, Drv7SegPos1);
-        Drv7Seg.set_glyph_to_pos(seg_byte_pos_2, Drv7SegPos2);
-        Drv7Seg.set_glyph_to_pos(seg_byte_pos_3, Drv7SegPos3);
-        Drv7Seg.set_glyph_to_pos(seg_byte_pos_4, Drv7SegPos4);
+        if (!dark_mode_flag) {
+            Drv7Seg.set_glyph_to_pos(seg_byte_pos_1, Drv7SegPos1);
+            Drv7Seg.set_glyph_to_pos(seg_byte_pos_2, Drv7SegPos2);
+            Drv7Seg.set_glyph_to_pos(seg_byte_pos_3, Drv7SegPos3);
+            Drv7Seg.set_glyph_to_pos(seg_byte_pos_4, Drv7SegPos4);
+        } else {
+            Drv7Seg.set_glyph_to_pos(blank, Drv7SegPos1);
+            Drv7Seg.set_glyph_to_pos(blank, Drv7SegPos2);
+            Drv7Seg.set_glyph_to_pos(blank, Drv7SegPos3);
+            Drv7Seg.set_glyph_to_pos(only_dot_on, Drv7SegPos4);
+        }
 
         #ifdef SERIAL_OUTPUT_ENABLED
             mp_safe_io::serial_print("Timer values (minutes and seconds): ");
@@ -313,7 +328,18 @@ void loop()
     if (time_setting_mode_flag) {
         time_setting_mode(RTC, CurrentTime,
                           btn_1, btn_2, btn_3,
+                          dark_mode_flag,
                           time_setting_mode_flag);
+    }
+
+
+    /*--- Dark mode control, continued ---*/
+
+    if (btn_3.tick()) {
+        if (btn_3.press()) {
+            dark_mode_flag = !dark_mode_flag;
+            update_output_due = true;
+        }
     }
 }
 
@@ -393,6 +419,7 @@ void decompose_rtc_time(current_time_t& CurrentTime)
 
 void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
                        uButton& btn_1, uButton& btn_2, uButton& btn_3,
+                       bool& dark_mode_flag,
                        bool& time_setting_mode_flag
                       )
 {
@@ -408,6 +435,7 @@ void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
         if (btn_1.tick()) {
             if (btn_1.press()) {
                 mp_safe_io::write_rtc_time(RTC, CurrentTime);
+                dark_mode_flag = false;
                 time_setting_mode_flag = false;
                 break;
             }
