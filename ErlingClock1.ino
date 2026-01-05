@@ -77,10 +77,12 @@
 
 /****************** DATA TYPES ******************/
 
-struct current_time_t {
-    uint32_t raw_hours;
-    uint32_t raw_minutes;
-    uint32_t raw_seconds;
+struct CurrentTime {
+    struct raw_t {
+        uint32_t hours;
+        uint32_t minutes;
+        uint32_t seconds;     
+    };
 
     struct hours_t {
         size_t tens;  // size_t is used because this and following values are used as indices.
@@ -96,10 +98,13 @@ struct current_time_t {
         size_t tens;
         size_t ones;
     };
-    
+
+    raw_t     raw;
     hours_t   hours;
     minutes_t minutes;
     seconds_t seconds;
+
+    void decompose_by_digits();
 };
 
 
@@ -109,8 +114,8 @@ struct current_time_t {
 
 namespace mp_safe_io {
     // I2C.
-    void read_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime);
-    void write_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime);
+    void read_rtc_time(GyverDS3231Min& RTC, CurrentTime& current_time);
+    void write_rtc_time(GyverDS3231Min& RTC, CurrentTime& current_time);
 
     // UART.
     void serial_print(const char* msg);
@@ -124,8 +129,7 @@ namespace mp_safe_io {
 
 /*--- Misc ---*/
 
-void decompose_rtc_time(current_time_t& CurrentTime);
-void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
+void time_setting_mode(GyverDS3231Min& RTC, CurrentTime& current_time,
                        uButton& btn_1, uButton& btn_2, uButton& btn_3,
                        bool& dark_mode_flag,
                        bool& time_setting_mode_flag
@@ -186,7 +190,7 @@ void loop()
     /*--- Interface initialization, continued ---*/
 
     static GyverDS3231Min RTC;
-    static current_time_t CurrentTime = {};  // Initialize with all-zero values.
+    static CurrentTime current_time = {};  // Initialize with all-zero values.
 
     static bool interface_begin_flag = false;
     if (!interface_begin_flag) {
@@ -218,18 +222,18 @@ void loop()
 
     static uint32_t updates = 0;
 
-    if (CurrentTime.raw_seconds >= MAX_COUNT_SECONDS) {
-        CurrentTime.raw_minutes++;
-        CurrentTime.raw_seconds = 0;
+    if (current_time.raw.seconds >= MAX_COUNT_SECONDS) {
+        current_time.raw.minutes++;
+        current_time.raw.seconds = 0;
     }
 
-    if (CurrentTime.raw_minutes >= MAX_COUNT_MINUTES) {
-        CurrentTime.raw_hours++;
-        CurrentTime.raw_minutes = 0;
+    if (current_time.raw.minutes >= MAX_COUNT_MINUTES) {
+        current_time.raw.hours++;
+        current_time.raw.minutes = 0;
     }
 
-    if (CurrentTime.raw_hours >= MAX_COUNT_HOURS) {
-        CurrentTime.raw_hours = 0;
+    if (current_time.raw.hours >= MAX_COUNT_HOURS) {
+        current_time.raw.hours = 0;
     }
 
     // Update triggers.
@@ -240,29 +244,29 @@ void loop()
     /*--- Time update and output ---*/
 
     if (update_i2c_due) {
-        mp_safe_io::read_rtc_time(RTC, CurrentTime);
+        mp_safe_io::read_rtc_time(RTC, current_time);
         mp_safe_io::serial_print("ErlingClock1 sketch version: 2.0.7\r\n");
         update_i2c_due = false;
     }
 
     if (update_output_due) {
-        decompose_rtc_time(CurrentTime);
+        current_time.decompose_by_digits();
 
-        uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(CurrentTime.hours.tens);
-        uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(CurrentTime.hours.ones);
-        uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(CurrentTime.minutes.tens);
-        uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(CurrentTime.minutes.ones);
+        uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.hours.tens);
+        uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(current_time.hours.ones);
+        uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(current_time.minutes.tens);
+        uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(current_time.minutes.ones);
 
         // Handy for debugging.
         /*
-        uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(CurrentTime.minutes.tens);
-        uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(CurrentTime.minutes.ones);
-        uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(CurrentTime.seconds.tens);
-        uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(CurrentTime.seconds.ones);
+        uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.minutes.tens);
+        uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(current_time.minutes.ones);
+        uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(current_time.seconds.tens);
+        uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(current_time.seconds.ones);
         */
 
         // Dot-segment blink.
-        if (CurrentTime.raw_seconds % 2) {
+        if (current_time.raw.seconds % 2) {
             seg_byte_pos_2 = SegMap595.toggle_dot(seg_byte_pos_2);
         }
 
@@ -280,14 +284,14 @@ void loop()
 
         #ifdef SERIAL_OUTPUT_ENABLED
             mp_safe_io::serial_print("Timer values (minutes and seconds): ");
-            mp_safe_io::serial_print(CurrentTime.hours.tens);
-            mp_safe_io::serial_print(CurrentTime.hours.ones);
+            mp_safe_io::serial_print(current_time.hours.tens);
+            mp_safe_io::serial_print(current_time.hours.ones);
             mp_safe_io::serial_print(":");
-            mp_safe_io::serial_print(CurrentTime.minutes.tens);
-            mp_safe_io::serial_print(CurrentTime.minutes.ones);
+            mp_safe_io::serial_print(current_time.minutes.tens);
+            mp_safe_io::serial_print(current_time.minutes.ones);
             mp_safe_io::serial_print(":");
-            mp_safe_io::serial_print(CurrentTime.seconds.tens);
-            mp_safe_io::serial_print(CurrentTime.seconds.ones);
+            mp_safe_io::serial_print(current_time.seconds.tens);
+            mp_safe_io::serial_print(current_time.seconds.ones);
             mp_safe_io::serial_print("\r\n");
         #endif
 
@@ -303,7 +307,7 @@ void loop()
     /*--- Counter and value update trigger, continued ---*/
 
     if (current_millis - previous_millis >= BASIC_INTERVAL) {
-        CurrentTime.raw_seconds++;
+        current_time.raw.seconds++;
         update_output_due = true;
         ++updates;
         previous_millis = current_millis;
@@ -326,7 +330,7 @@ void loop()
     }
 
     if (time_setting_mode_flag) {
-        time_setting_mode(RTC, CurrentTime,
+        time_setting_mode(RTC, current_time,
                           btn_1, btn_2, btn_3,
                           dark_mode_flag,
                           time_setting_mode_flag);
@@ -346,26 +350,38 @@ void loop()
 
 /*--- Extra functions ---*/
 
-void mp_safe_io::read_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime)
+void CurrentTime::decompose_by_digits()
+{
+    hours.tens = raw.hours / 10;
+    hours.ones = raw.hours % 10;
+    
+    minutes.tens = raw.minutes / 10;
+    minutes.ones = raw.minutes % 10;
+    
+    seconds.tens = raw.seconds / 10;
+    seconds.ones = raw.seconds % 10;
+}
+
+void mp_safe_io::read_rtc_time(GyverDS3231Min& RTC, CurrentTime& current_time)
 {
     Drv7Seg.output_all();
     Datime dt = RTC.getTime();
     Drv7Seg.output_all();
 
-    CurrentTime.raw_hours   = static_cast<uint32_t>(dt.hour);
-    CurrentTime.raw_minutes = static_cast<uint32_t>(dt.minute);
-    CurrentTime.raw_seconds = static_cast<uint32_t>(dt.second);
+    current_time.raw.hours   = static_cast<uint32_t>(dt.hour);
+    current_time.raw.minutes = static_cast<uint32_t>(dt.minute);
+    current_time.raw.seconds = static_cast<uint32_t>(dt.second);
 }
 
-void mp_safe_io::write_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime)
+void mp_safe_io::write_rtc_time(GyverDS3231Min& RTC, CurrentTime& current_time)
 {
     Datime dt(2001, 1, 1,  /* Arbitrary placeholders.
                             * Date must NOT be 01.01.2000, because for some reason setTime() is programmed to
                             * return false early in case the date is Y2K month 1 day 1 (AlexGyver's design decision).
                             */
-              static_cast<uint8_t>(CurrentTime.raw_hours),
-              static_cast<uint8_t>(CurrentTime.raw_minutes),
-              static_cast<uint8_t>(CurrentTime.raw_seconds)
+              static_cast<uint8_t>(current_time.raw.hours),
+              static_cast<uint8_t>(current_time.raw.minutes),
+              static_cast<uint8_t>(current_time.raw.seconds)
              );
 
     Drv7Seg.output_all();
@@ -376,9 +392,9 @@ void mp_safe_io::write_rtc_time(GyverDS3231Min& RTC, current_time_t& CurrentTime
     /*
     Drv7Seg.output_all();
     RTC.setTime(2001, 1, 1,
-                static_cast<uint8_t>(CurrentTime.raw_hours),
-                static_cast<uint8_t>(CurrentTime.raw_minutes),
-                static_cast<uint8_t>(CurrentTime.raw_seconds)
+                static_cast<uint8_t>(current_time.raw.hours),
+                static_cast<uint8_t>(current_time.raw.minutes),
+                static_cast<uint8_t>(current_time.raw.seconds)
                );
     Drv7Seg.output_all();
     */
@@ -405,25 +421,13 @@ void mp_safe_io::serial_print(uint32_t val)
 }
 #endif
 
-void decompose_rtc_time(current_time_t& CurrentTime)
-{
-    CurrentTime.hours.tens = CurrentTime.raw_hours / 10;
-    CurrentTime.hours.ones = CurrentTime.raw_hours % 10;
-    
-    CurrentTime.minutes.tens = CurrentTime.raw_minutes / 10;
-    CurrentTime.minutes.ones = CurrentTime.raw_minutes % 10;
-    
-    CurrentTime.seconds.tens = CurrentTime.raw_seconds / 10;
-    CurrentTime.seconds.ones = CurrentTime.raw_seconds % 10;
-}
-
-void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
+void time_setting_mode(GyverDS3231Min& RTC, CurrentTime& current_time,
                        uButton& btn_1, uButton& btn_2, uButton& btn_3,
                        bool& dark_mode_flag,
                        bool& time_setting_mode_flag
                       )
 {
-    CurrentTime = {};  // Assign all-zero values.
+    current_time = {};  // Assign all-zero values.
     bool update_output_due = true;
 
     while (true) {
@@ -434,7 +438,7 @@ void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
 
         if (btn_1.tick()) {
             if (btn_1.press()) {
-                mp_safe_io::write_rtc_time(RTC, CurrentTime);
+                mp_safe_io::write_rtc_time(RTC, current_time);
                 dark_mode_flag = false;
                 time_setting_mode_flag = false;
                 break;
@@ -443,51 +447,51 @@ void time_setting_mode(GyverDS3231Min& RTC, current_time_t& CurrentTime,
 
         if (btn_2.tick()) {
             if (btn_2.press() || btn_2.step()) {
-                CurrentTime.raw_hours++;
+                current_time.raw.hours++;
                 // Handy for debugging.
-                //CurrentTime.raw_minutes++;
+                //current_time.raw.minutes++;
                 update_output_due = true;
             }
         }
 
         if (btn_3.tick()) {
             if (btn_3.press() || btn_3.step()) {
-                CurrentTime.raw_minutes++;
+                current_time.raw.minutes++;
                 // Handy for debugging.
-                //CurrentTime.raw_seconds++;
+                //current_time.raw.seconds++;
                 update_output_due = true;
             }
         }    
 
         // Handy for debugging.
         /*
-        if (CurrentTime.raw_seconds >= MAX_COUNT_SECONDS) {
-            CurrentTime.raw_seconds = 0;
+        if (current_time.raw.seconds >= MAX_COUNT_SECONDS) {
+            current_time.raw.seconds = 0;
         }
         */
 
-        if (CurrentTime.raw_minutes >= MAX_COUNT_MINUTES) {
-            CurrentTime.raw_minutes = 0;
+        if (current_time.raw.minutes >= MAX_COUNT_MINUTES) {
+            current_time.raw.minutes = 0;
         }
 
-        if (CurrentTime.raw_hours >= MAX_COUNT_HOURS) {
-            CurrentTime.raw_hours = 0;
+        if (current_time.raw.hours >= MAX_COUNT_HOURS) {
+            current_time.raw.hours = 0;
         }
 
         if (update_output_due) {
-                decompose_rtc_time(CurrentTime);
+                current_time.decompose_by_digits();
 
-                uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(CurrentTime.hours.tens);
-                uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(CurrentTime.hours.ones);
-                uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(CurrentTime.minutes.tens);
-                uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(CurrentTime.minutes.ones);
+                uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.hours.tens);
+                uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(current_time.hours.ones);
+                uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(current_time.minutes.tens);
+                uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(current_time.minutes.ones);
 
                 // Handy for debugging.
                 /*
-                uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(CurrentTime.minutes.tens);
-                uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(CurrentTime.minutes.ones);
-                uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(CurrentTime.seconds.tens);
-                uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(CurrentTime.seconds.ones);
+                uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.minutes.tens);
+                uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(current_time.minutes.ones);
+                uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(current_time.seconds.tens);
+                uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(current_time.seconds.ones);
                 */
 
                 Drv7Seg.set_glyph_to_pos(seg_byte_pos_1, Drv7SegPos1);
