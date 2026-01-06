@@ -6,7 +6,10 @@
  * Purpose:  The main file of the firmware (the Arduino sketch) written for
  *           the Arduino Pro Mini-based electronic clock I made in 2022.
  * ----------------------------------------------------------------------------|---------------------------------------|
- * Notes:
+ * Notes:    The project's Git repositories:
+ *           * https://github.com/ErlingSigurdson/ErlingClock1
+ *           * https://gitflic.ru/project/efimov-d-v/erlingclock1
+ *           * https://codeberg.org/ErlingSigurdson/ErlingClock1
  */
 
 
@@ -14,7 +17,7 @@
 
 /*--- Includes ---*/
 
-// Display driver.
+// 7-segment display driver.
 #include <Drv7SegQ595.h>
 
 // Byte mapping.
@@ -59,7 +62,7 @@
 #define BTN_3_PIN 11
 
 
-/*--- Counters and timing ---*/
+/*--- Timing and counters ---*/
 
 #define BASIC_INTERVAL               1000  // In milliseconds.
 #define I2C_READ_INTERVAL_MULTIPLIER 10
@@ -90,13 +93,14 @@ struct CurrentTime {
     struct raw_t {
         uint32_t hours;
         uint32_t minutes;
-        uint32_t seconds;     
+        uint32_t seconds;
     };
 
+    // size_t is used in this data type because respective values are used as indices.
     struct hours_t {
-        size_t tens;  // size_t is used because this and following values are used as indices.
+        size_t tens;
         size_t ones;
-    }; 
+    };
 
     struct minutes_t {
         size_t tens;
@@ -146,6 +150,8 @@ namespace modes {
                   bool& time_setting_mode_flag
                  );
     }
+
+    // More modes may be added later.
 }
 
 
@@ -203,8 +209,6 @@ void loop()
     /*--- Interface initialization, continued ---*/
 
     static GyverDS3231Min RTC;
-    static CurrentTime current_time = {};  // Initialize with all-zero values.
-
     static bool interface_begin_flag = false;
     if (!interface_begin_flag) {
         Wire.begin();
@@ -224,16 +228,16 @@ void loop()
 
     static bool dark_mode_flag = false;
     constexpr uint8_t blank = 0;
-    static uint8_t only_dot_on = SegMap595.turn_on_dot(blank);
-    
+    static uint8_t only_dot_on = SegMap595.turn_on_dot(blank);  // Indicate that clock is on.
 
-    /*--- Counter and value update trigger ---*/
 
-    // Counter.
+    /*--- Counters and update triggers ---*/
+
+    // Counters.
     uint32_t current_millis = millis();
     static uint32_t previous_millis = current_millis;
 
-    static uint32_t updates = 0;
+    static CurrentTime current_time = {};  // Initialize with all-zero values.
 
     if (current_time.raw.seconds >= MAX_COUNT_SECONDS) {
         current_time.raw.minutes++;
@@ -249,12 +253,14 @@ void loop()
         current_time.raw.hours = 0;
     }
 
+    static uint32_t updates = 0;
+
     // Update triggers.
     static bool update_output_due = true;
     static bool update_i2c_due = true;
 
 
-    /*--- Time update and output ---*/
+    /*--- Output values update and optional UART output ---*/
 
     if (update_i2c_due) {
         mp_safe_io::read_rtc_time(RTC, current_time);
@@ -368,10 +374,10 @@ void CurrentTime::decompose_by_digits()
 {
     hours.tens = raw.hours / 10;
     hours.ones = raw.hours % 10;
-    
+
     minutes.tens = raw.minutes / 10;
     minutes.ones = raw.minutes % 10;
-    
+
     seconds.tens = raw.seconds / 10;
     seconds.ones = raw.seconds % 10;
 }
@@ -475,7 +481,7 @@ void modes::time_setting::loop(GyverDS3231Min& RTC, CurrentTime& current_time,
                 //current_time.raw.seconds++;
                 update_output_due = true;
             }
-        }    
+        }
 
         // Handy for debugging.
         /*
