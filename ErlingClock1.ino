@@ -177,8 +177,10 @@ void setup()
 
     if (mapping_status < 0) {
         while(true) {
-            Serial.print("Error: mapping failed, error code ");
-            Serial.println(mapping_status);
+            #ifdef SERIAL_OUTPUT_ENABLED
+                Serial.print("Error: mapping failed, error code ");
+                Serial.println(mapping_status);
+            #endif
             delay(BASIC_INTERVAL);
         }
     }
@@ -196,8 +198,10 @@ void setup()
 
     if (drv_config_status < 0) {
         while(true) {
-            Serial.print("Error: driver configuration failed, error code ");
-            Serial.println(drv_config_status);
+            #ifdef SERIAL_OUTPUT_ENABLED
+                Serial.print("Error: driver configuration failed, error code ");
+                Serial.println(drv_config_status);
+            #endif
             delay(BASIC_INTERVAL);
         }
     }
