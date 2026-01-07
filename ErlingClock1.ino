@@ -447,6 +447,7 @@ void mp_safe_io::serial_print(size_t val)
     Drv7Seg.output_all();
 }
 
+// This overload can theoretically truncate the argument value, but given the realistic time values, it's a non-issue.
 #if defined(UINT32_MAX) && defined(SIZE_MAX) && (UINT32_MAX > SIZE_MAX)
 void mp_safe_io::serial_print(uint32_t val)
 {
