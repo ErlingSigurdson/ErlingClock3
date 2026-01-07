@@ -300,7 +300,7 @@ void loop()
         }
 
         #ifdef SERIAL_OUTPUT_ENABLED
-            mp_safe_io::serial_print("Timer values (hours, minutes and seconds): ");
+            mp_safe_io::serial_print("Time values (hours, minutes and seconds): ");
             mp_safe_io::serial_print(current_time.hours.tens);
             mp_safe_io::serial_print(current_time.hours.ones);
             mp_safe_io::serial_print(":");
