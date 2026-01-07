@@ -262,6 +262,7 @@ void loop()
     }
 
     if (update_output_due) {
+        current_time.apply_max_count();
         current_time.decompose_by_digits();
 
         uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.hours.tens);
@@ -320,7 +321,6 @@ void loop()
 
     if (current_millis - previous_millis >= BASIC_INTERVAL) {
         current_time.raw.seconds++;
-        current_time.apply_max_count();
         update_output_due = true;
         ++updates;
         previous_millis = current_millis;
