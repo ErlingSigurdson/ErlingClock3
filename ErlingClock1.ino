@@ -118,7 +118,7 @@ struct CurrentTime {
         void decompose_by_digits();
 
     private:
-        static constexpr uint32_t _max_count_hours = 24;
+        static constexpr uint32_t _max_count_hours   = 24;
         static constexpr uint32_t _max_count_minutes = 60;
         static constexpr uint32_t _max_count_seconds = 60;
 };
@@ -514,28 +514,28 @@ void modes::time_setting::loop(GyverDS3231Min& RTC, CurrentTime& current_time,
         }
 
         if (update_output_due) {
-                current_time.apply_max_count();
-                current_time.decompose_by_digits();
+            current_time.apply_max_count();
+            current_time.decompose_by_digits();
 
-                uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.hours.tens);
-                uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(current_time.hours.ones);
-                uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(current_time.minutes.tens);
-                uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(current_time.minutes.ones);
+            uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.hours.tens);
+            uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(current_time.hours.ones);
+            uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(current_time.minutes.tens);
+            uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(current_time.minutes.ones);
 
-                // Handy for debugging.
-                /*
-                uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.minutes.tens);
-                uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(current_time.minutes.ones);
-                uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(current_time.seconds.tens);
-                uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(current_time.seconds.ones);
-                */
+            // Handy for debugging.
+            /*
+            uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.minutes.tens);
+            uint8_t seg_byte_pos_2 = SegMap595.get_mapped_byte(current_time.minutes.ones);
+            uint8_t seg_byte_pos_3 = SegMap595.get_mapped_byte(current_time.seconds.tens);
+            uint8_t seg_byte_pos_4 = SegMap595.get_mapped_byte(current_time.seconds.ones);
+            */
 
-                Drv7Seg.set_glyph_to_pos(seg_byte_pos_1, Drv7SegPos1);
-                Drv7Seg.set_glyph_to_pos(seg_byte_pos_2, Drv7SegPos2);
-                Drv7Seg.set_glyph_to_pos(seg_byte_pos_3, Drv7SegPos3);
-                Drv7Seg.set_glyph_to_pos(seg_byte_pos_4, Drv7SegPos4);
+            Drv7Seg.set_glyph_to_pos(seg_byte_pos_1, Drv7SegPos1);
+            Drv7Seg.set_glyph_to_pos(seg_byte_pos_2, Drv7SegPos2);
+            Drv7Seg.set_glyph_to_pos(seg_byte_pos_3, Drv7SegPos3);
+            Drv7Seg.set_glyph_to_pos(seg_byte_pos_4, Drv7SegPos4);
 
-                update_output_due = false;
+            update_output_due = false;
         }
     }
 }
