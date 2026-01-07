@@ -67,10 +67,6 @@
 #define BASIC_INTERVAL               1000  // In milliseconds.
 #define I2C_READ_INTERVAL_MULTIPLIER 10
 
-#define MAX_COUNT_HOURS   24
-#define MAX_COUNT_MINUTES 60
-#define MAX_COUNT_SECONDS 60
-
 
 /*--- UART ---*/
 
@@ -90,34 +86,41 @@
 /****************** DATA TYPES ******************/
 
 struct CurrentTime {
-    struct raw_t {
-        uint32_t hours;
-        uint32_t minutes;
-        uint32_t seconds;
-    };
+    public:
+        struct raw_t {
+            uint32_t hours;
+            uint32_t minutes;
+            uint32_t seconds;
+        };
 
-    // size_t is used in this data type because respective values are used as indices.
-    struct hours_t {
-        size_t tens;
-        size_t ones;
-    };
+        // size_t is used in this data type because respective values are used as indices.
+        struct hours_t {
+            size_t tens;
+            size_t ones;
+        };
 
-    struct minutes_t {
-        size_t tens;
-        size_t ones;
-    };
+        struct minutes_t {
+            size_t tens;
+            size_t ones;
+        };
 
-    struct seconds_t {
-        size_t tens;
-        size_t ones;
-    };
+        struct seconds_t {
+            size_t tens;
+            size_t ones;
+        };
 
-    raw_t     raw;
-    hours_t   hours;
-    minutes_t minutes;
-    seconds_t seconds;
+        raw_t     raw;
+        hours_t   hours;
+        minutes_t minutes;
+        seconds_t seconds;
 
-    void decompose_by_digits();
+        void apply_max_count();
+        void decompose_by_digits();
+
+    private:
+        static constexpr uint32_t _max_count_hours = 24;
+        static constexpr uint32_t _max_count_minutes = 60;
+        static constexpr uint32_t _max_count_seconds = 60;
 };
 
 
@@ -239,20 +242,6 @@ void loop()
 
     static CurrentTime current_time = {};  // Initialize with all-zero values.
 
-    if (current_time.raw.seconds >= MAX_COUNT_SECONDS) {
-        current_time.raw.minutes++;
-        current_time.raw.seconds = 0;
-    }
-
-    if (current_time.raw.minutes >= MAX_COUNT_MINUTES) {
-        current_time.raw.hours++;
-        current_time.raw.minutes = 0;
-    }
-
-    if (current_time.raw.hours >= MAX_COUNT_HOURS) {
-        current_time.raw.hours = 0;
-    }
-
     static uint32_t updates = 0;
 
     // Update triggers.
@@ -331,6 +320,7 @@ void loop()
 
     if (current_millis - previous_millis >= BASIC_INTERVAL) {
         current_time.raw.seconds++;
+        current_time.apply_max_count();
         update_output_due = true;
         ++updates;
         previous_millis = current_millis;
@@ -373,6 +363,23 @@ void loop()
 
 
 /*--- Extra functions ---*/
+
+void CurrentTime::apply_max_count()
+{
+    if (raw.seconds >= _max_count_seconds) {
+        raw.minutes += raw.seconds / _max_count_seconds;
+        raw.seconds %= _max_count_seconds;
+    }
+
+    if (raw.minutes >= _max_count_minutes) {
+        raw.hours += raw.minutes / _max_count_minutes;
+        raw.minutes %= _max_count_minutes;
+    }
+
+    if (raw.hours >= _max_count_hours) {
+        raw.hours %= _max_count_hours;
+    }
+}
 
 void CurrentTime::decompose_by_digits()
 {
@@ -487,22 +494,8 @@ void modes::time_setting::loop(GyverDS3231Min& RTC, CurrentTime& current_time,
             }
         }
 
-        // Handy for debugging.
-        /*
-        if (current_time.raw.seconds >= MAX_COUNT_SECONDS) {
-            current_time.raw.seconds = 0;
-        }
-        */
-
-        if (current_time.raw.minutes >= MAX_COUNT_MINUTES) {
-            current_time.raw.minutes = 0;
-        }
-
-        if (current_time.raw.hours >= MAX_COUNT_HOURS) {
-            current_time.raw.hours = 0;
-        }
-
         if (update_output_due) {
+                current_time.apply_max_count();
                 current_time.decompose_by_digits();
 
                 uint8_t seg_byte_pos_1 = SegMap595.get_mapped_byte(current_time.hours.tens);
