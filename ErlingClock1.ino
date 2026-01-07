@@ -513,6 +513,9 @@ void modes::time_setting::loop(GyverDS3231Min& RTC, CurrentTime& current_time,
             }
         }
 
+
+        /*--- Output values update ---*/
+
         if (update_output_due) {
             current_time.apply_max_count();
             current_time.decompose_by_digits();
