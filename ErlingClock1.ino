@@ -405,6 +405,13 @@ void mp_safe_io::read_rtc_time(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
     Datime dt = GyverRTC.getTime();
     Drv7Seg.output_all();
 
+    /* getTime() returns an all-zero Datime object if I2C read fails.
+     * Thus zero year value is a valid indicator of a failed read.
+     */
+    if (dt.year == 0) {
+        return;
+    }
+
     current_time.raw.hours   = static_cast<uint32_t>(dt.hour);
     current_time.raw.minutes = static_cast<uint32_t>(dt.minute);
     current_time.raw.seconds = static_cast<uint32_t>(dt.second);
