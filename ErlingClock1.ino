@@ -67,6 +67,8 @@
 #define BASIC_INTERVAL               1000UL  // In milliseconds.
 #define I2C_READ_INTERVAL_MULTIPLIER 10
 
+#define RTC_Y2K 2000
+
 
 /*--- UART ---*/
 
@@ -405,10 +407,12 @@ void mp_safe_io::read_rtc_time(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
     Datime dt = GyverRTC.getTime();
     Drv7Seg.output_all();
 
-    /* getTime() returns an all-zero Datime object if I2C read fails.
-     * Thus zero year value is a valid indicator of a failed read.
+    /* getTime() returns:
+     * - an all-zero Datime object if reading from RTC fails;
+     * - a Datime object with a minimum year value of 2000 if reading from RTC succeeds.
+     * Thus a returned year value of less than 2000 is a valid indicator of a failed read.
      */
-    if (dt.year == 0) {
+    if (dt.year < RTC_Y2K) {
         return;
     }
 
@@ -420,8 +424,7 @@ void mp_safe_io::read_rtc_time(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
 void mp_safe_io::write_rtc_time(GyverDS3231Min& GyverRTC, CurrentTime& current_time)
 {
     Datime dt(2001, 1, 1,  /* Arbitrary placeholders.
-                            * Date must NOT be 01.01.2000, because for some reason setTime() is programmed to
-                            * return false early in case the date is Y2K month 1 day 1 (AlexGyver's design decision).
+                            * Date to be written must not be 01.01.2000 (see docs for GyverDS3231Min.h and Stamp.h).
                             */
               static_cast<uint8_t>(current_time.raw.hours),
               static_cast<uint8_t>(current_time.raw.minutes),
