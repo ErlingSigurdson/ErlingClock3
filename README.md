@@ -26,12 +26,14 @@ But hey, it works.
 
 ![circuit_diagram_(schematic).png](extras/images/circuit_diagram_(schematic).png)
 
-### Hint: charging circuit
+### Hint: charging circuit removal
 
 It is a common knowledge that most cheap DS3231 breakout boards have a backup battery charging circuit that is, first,
 designed for rechargeable batteries (like ML2032), and second, designed rather poorly. Since I use a non-rechargeable
 CR2032 battery, I followed a common advice and removed the diode and the resistor that constitute the said circuit
-(removing any of them would be enough, but I removed both anyway).
+(removing any of them would be enough, but I removed both anyway). I suspect that it improves battery health and makes
+RTC time update on backup power more reliable.
+
 
 ![4.png](extras/images/4.png)
 
