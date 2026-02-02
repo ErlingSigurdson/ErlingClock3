@@ -1,15 +1,15 @@
 /*************** FILE DESCRIPTION ***************/
 
 /**
- * Filename: ErlingClock1.ino
+ * Filename: ErlingClock3.ino
  * ----------------------------------------------------------------------------|---------------------------------------|
  * Purpose:  The main file of the firmware (the Arduino sketch) written for
- *           the Arduino Pro Mini-based electronic clock I made in 2022.
+ *           the Arduino Nano-based electronic clock I made in 2022.
  * ----------------------------------------------------------------------------|---------------------------------------|
  * Notes:    The project's Git repositories:
- *           * https://github.com/ErlingSigurdson/ErlingClock1
- *           * https://gitflic.ru/project/efimov-d-v/erlingclock1
- *           * https://codeberg.org/ErlingSigurdson/ErlingClock1
+ *           * https://github.com/ErlingSigurdson/ErlingClock3
+ *           * https://gitflic.ru/project/efimov-d-v/erlingclock3
+ *           * https://codeberg.org/ErlingSigurdson/ErlingClock3
  */
 
 
@@ -82,7 +82,7 @@
 #define STRINGIFY(x) INTERMEDIATE_STRINGIFY(x)
 #define INTERMEDIATE_STRINGIFY(x) #x
 
-#define VERSION 2.3.0
+#define VERSION 2.0.0
 
 
 /****************** DATA TYPES ******************/
@@ -261,7 +261,7 @@ void loop()
         mp_safe_io::read_rtc_time(GyverRTC, current_time);
 
         #ifdef SERIAL_OUTPUT_ENABLED
-        mp_safe_io::serial_print("ErlingClock1 sketch version: " STRINGIFY(VERSION) "\r\n");
+        mp_safe_io::serial_print("ErlingClock3 sketch version: " STRINGIFY(VERSION) "\r\n");
         #endif
         
         update_i2c_due = false;
