@@ -34,14 +34,14 @@
 
 #define POS_SWITCH_TYPE Drv7SegActiveHigh
 
-#define DATA_PIN  4
-#define LATCH_PIN 2
-#define CLOCK_PIN 3
+#define DATA_PIN  6
+#define LATCH_PIN 7
+#define CLOCK_PIN 8
 
-#define POS_1_PIN 9
-#define POS_2_PIN 8
-#define POS_3_PIN 7
-#define POS_4_PIN 6
+#define POS_1_PIN 10
+#define POS_2_PIN 11
+#define POS_3_PIN 12
+#define POS_4_PIN 9
 
 /* Not strictly necessary, but it's a guard against ripple caused by
  * gaps in multiplexing that occur due to long-ish I/O.
@@ -51,7 +51,7 @@
 
 /*--- SegMap595 library API parameters ---*/
 
-#define MAP_STR "DA@FCBGE"
+#define MAP_STR "GC@DEBFA"
 #define DISPLAY_COMMON_PIN SegMap595CommonCathode
 
 
