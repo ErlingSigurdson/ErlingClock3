@@ -263,7 +263,7 @@ void loop()
         #ifdef SERIAL_OUTPUT_ENABLED
         mp_safe_io::serial_print("ErlingClock3 sketch version: " STRINGIFY(VERSION) "\r\n");
         #endif
-        
+
         update_i2c_due = false;
     }
 
