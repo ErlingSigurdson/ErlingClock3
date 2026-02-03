@@ -57,9 +57,9 @@
 
 /*--- Buttons ---*/
 
-#define BTN_1_PIN 10
-#define BTN_2_PIN 12
-#define BTN_3_PIN 11
+#define BTN_1_PIN A2
+#define BTN_2_PIN A1
+#define BTN_3_PIN A0
 
 
 /*--- Timing and counters ---*/
