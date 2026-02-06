@@ -26,6 +26,8 @@ It's like on this picture (taken from a [similar project](https://github.com/Erl
 but it differs in what microcontroller pins are used and in the wiring order between the display and the 595.
 It's all reflected in the sketch.
 
+TODO: about OE
+
 As it's drawn, the schematic is far from perfect anyway: base drive resistors should have higher values, pull-down
 resistors should be added to bases, etc. But hey, it works.
 
