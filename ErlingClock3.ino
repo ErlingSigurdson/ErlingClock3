@@ -43,6 +43,7 @@
 #define POS_3_PIN 12
 #define POS_4_PIN 9
 
+
 /* Not strictly necessary, but it's a guard against ripple caused by
  * gaps in multiplexing that occur due to long-ish I/O.
  */
@@ -74,6 +75,17 @@
 
 #define SERIAL_OUTPUT_ENABLED  // Comment out to suppress the UART output.
 #define BAUD_RATE 115200
+
+
+/*--- Brightness control ---*/
+
+#define OE_PIN 2
+
+#define BRIGHTNESS_CTRL_MAX_VAL_PERCENT 100
+#define BRIGHTNESS_CTRL_MAX_VAL         255
+
+#define BRIGHTNESS_CTRL_ERR_VAL -1
+#define BRIGHTNESS_CTRL_OK       0
 
 
 /*--- Misc ---*/
@@ -160,6 +172,18 @@ namespace modes {
 }
 
 
+/*--- Brightness control ---*/
+
+namespace brightness_ctrl {
+    namespace percent {
+        int32_t set(uint32_t pwm_pin, uint8_t val_percent);
+        int32_t reduce(uint32_t pwm_pin,
+                       uint8_t& current_val_percent,
+                       uint8_t reduction_val_percent = 10);  // One-tenth.
+    }
+}
+
+
 /******************* FUNCTIONS ******************/
 
 /*--- Basic functions ---*/
@@ -238,6 +262,11 @@ void loop()
     static bool dark_mode_flag = false;
     constexpr uint8_t blank = 0;
     static uint8_t only_dot_on = SegMap595.turn_on_dot(blank);  // Indicate that clock is on.
+
+
+    /*--- Brightness control ---*/
+
+    static uint8_t brightness_current_val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT;
 
 
     /*--- Counters and update triggers ---*/
@@ -356,6 +385,15 @@ void loop()
                                   dark_mode_flag,
                                   time_setting_mode_flag
                                  );
+    }
+
+
+    /*--- Brightness control, continued ---*/
+
+    if (btn_2.tick()) {
+        if (btn_3.hold()) {
+            brightness_ctrl::percent::reduce(OE_PIN);
+        }
     }
 
 
@@ -551,4 +589,38 @@ void modes::time_setting::loop(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
             update_output_due = false;
         }
     }
+}
+
+int32_t brightness_ctrl::percent::set(uint32_t pwm_pin, uint8_t val_percent)
+{
+    if (val_percent > BRIGHTNESS_CTRL_MAX_VAL_PERCENT) {
+        return BRIGHTNESS_CTRL_ERR_VAL;
+    }
+
+    val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - val_percent;  /* Inversion is necessary because output
+                                                                   * is enabled when OE pin is set to LOW.
+                                                                   */
+    uint8_t val = (val_percent * 255 + 50) / 100;
+    analogWrite(pwm_pin, val);
+
+    return BRIGHTNESS_CTRL_OK;
+}
+
+int32_t brightness_ctrl::percent::reduce(uint32_t pwm_pin,
+                                         uint8_t& current_val_percent,
+                                         uint8_t reduction_val_percent);
+{
+    if (reduction_val_percent == 0 || reduction_val_percent > BRIGHTNESS_CTRL_MAX_VAL_PERCENT) {
+        return BRIGHTNESS_CTRL_ERR_VAL;
+    }
+
+    uint8_t val_percent = 0;
+    if (current_val_percent >= reduction_val_percent) {
+        // Wraparound.
+        val_percent = current_val_percent - reduction_val_percent;
+    } else {
+        val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - (reduction_val_percent - current_val_percent);
+    }
+
+    brightness_ctrl::percent::set(pwm_pin, val_percent);
 }
