@@ -392,7 +392,7 @@ void loop()
 
     if (btn_2.tick()) {
         if (btn_3.hold()) {
-            brightness_ctrl::percent::reduce(OE_PIN);
+            brightness_ctrl::percent::reduce(OE_PIN, brightness_current_val_percent);
         }
     }
 
@@ -608,7 +608,7 @@ int32_t brightness_ctrl::percent::set(uint32_t pwm_pin, uint8_t val_percent)
 
 int32_t brightness_ctrl::percent::reduce(uint32_t pwm_pin,
                                          uint8_t& current_val_percent,
-                                         uint8_t reduction_val_percent);
+                                         uint8_t reduction_val_percent)
 {
     if (reduction_val_percent == 0 || reduction_val_percent > BRIGHTNESS_CTRL_MAX_VAL_PERCENT) {
         return BRIGHTNESS_CTRL_ERR_VAL;
@@ -623,4 +623,6 @@ int32_t brightness_ctrl::percent::reduce(uint32_t pwm_pin,
     }
 
     brightness_ctrl::percent::set(pwm_pin, val_percent);
+
+    return BRIGHTNESS_CTRL_OK;
 }
