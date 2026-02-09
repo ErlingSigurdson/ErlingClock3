@@ -62,6 +62,10 @@
 #define BTN_2_PIN A1
 #define BTN_3_PIN A0
 
+#ifdef UB_STEP_PRD
+    #undef UB_STEP_PRD
+    #define UB_STEP_PRD 2000
+#endif
 
 /*--- Timing and counters ---*/
 
@@ -79,7 +83,7 @@
 
 /*--- Brightness control ---*/
 
-#define OE_PIN 2
+#define BRIGHTNESS_CTRL_PIN 3
 
 #define BRIGHTNESS_CTRL_MAX_VAL_PERCENT 100
 #define BRIGHTNESS_CTRL_MAX_VAL         255
@@ -179,7 +183,7 @@ namespace brightness_ctrl {
         int32_t set(uint32_t pwm_pin, uint8_t val_percent);
         int32_t reduce(uint32_t pwm_pin,
                        uint8_t& current_val_percent,
-                       uint8_t reduction_val_percent = 10);  // One-tenth.
+                       uint8_t reduction_val_percent = 5);
     }
 }
 
@@ -235,6 +239,32 @@ void setup()
     #ifdef ANTI_GHOSTING_RETENTION_DURATION
     Drv7Seg.set_anti_ghosting_retention_duration(ANTI_GHOSTING_RETENTION_DURATION);
     #endif
+
+
+    /*--- Brightness control pin configuration ---*/
+
+    pinMode(BRIGHTNESS_CTRL_PIN, OUTPUT);
+        // --- Configure Timer2 for fast PWM on OC2B (pin 3) ---
+
+    // Stop Timer2
+    TCCR2A = 0;
+    TCCR2B = 0;
+
+    // Fast PWM, 8-bit: WGM22:0 = 0b011 (modes 3)
+    // WGM21 = 1, WGM20 = 1
+    TCCR2A |= (1 << WGM21) | (1 << WGM20);
+    // WGM22 stays 0 in TCCR2B
+
+    // Non-inverting mode on OC2B (pin 3): COM2B1 = 1, COM2B0 = 0
+    TCCR2A |= (1 << COM2B1);
+
+    // Prescaler = 1: CS22:0 = 0b001
+    //TCCR2B |= (1 << CS20);  // CS20 = 1, CS21 = 0, CS22 = 0
+
+    // Prescaler = 8, CS22:0 = 0b010
+    TCCR2B |= (1 << CS21);  
+
+    brightness_ctrl::percent::set(BRIGHTNESS_CTRL_PIN, 5);
 }
 
 void loop()
@@ -393,8 +423,8 @@ void loop()
     /*--- Brightness control, continued ---*/
 
     if (btn_2.tick()) {
-        if (btn_3.hold()) {
-            brightness_ctrl::percent::reduce(OE_PIN, brightness_current_val_percent);
+        if (btn_2.press() || btn_2.step()) {
+            brightness_ctrl::percent::reduce(BRIGHTNESS_CTRL_PIN, brightness_current_val_percent);
         }
     }
 
@@ -599,11 +629,13 @@ int32_t brightness_ctrl::percent::set(uint32_t pwm_pin, uint8_t val_percent)
         return BRIGHTNESS_CTRL_ERR_VAL;
     }
 
-    val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - val_percent;  /* Inversion is necessary because output
-                                                                   * is enabled when OE pin is set to LOW.
-                                                                   */
-    uint8_t val = (val_percent * 255 + 50) / 100;
+    // Invertion is necessary because 595's output is enabled when its OE pin is pulled to LOW. 
+    uint8_t val_percent_inverted = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - val_percent;
+    uint8_t val = (val_percent_inverted * 255 + 50) / 100;
+
     analogWrite(pwm_pin, val);
+    Serial.print("Brightness level set to ");
+    Serial.println(val_percent);
 
     return BRIGHTNESS_CTRL_OK;
 }
@@ -618,13 +650,13 @@ int32_t brightness_ctrl::percent::reduce(uint32_t pwm_pin,
 
     uint8_t val_percent = 0;
     if (current_val_percent >= reduction_val_percent) {
-        // Wraparound.
-        val_percent = current_val_percent - reduction_val_percent;
+        val_percent = current_val_percent - reduction_val_percent;  // Wraparound.
     } else {
         val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - (reduction_val_percent - current_val_percent);
     }
 
     brightness_ctrl::percent::set(pwm_pin, val_percent);
+    current_val_percent = val_percent;
 
     return BRIGHTNESS_CTRL_OK;
 }
