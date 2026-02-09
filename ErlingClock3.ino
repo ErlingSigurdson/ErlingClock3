@@ -385,6 +385,8 @@ void loop()
                                   dark_mode_flag,
                                   time_setting_mode_flag
                                  );
+        current_millis = millis();
+        previous_millis = current_millis;
     }
 
 
