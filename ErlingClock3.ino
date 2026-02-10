@@ -24,6 +24,9 @@
 #include <SegMap595.h>
 
 // Buttons.
+#define UB_STEP_PRD 400  /* Impulse increment period length in milliseconds, affects step() method.
+                          * Has to be defined before the respective 'include' directive.
+                          */
 #include <uButton.h>
 
 // DS3231 RTC interfacing.
@@ -62,10 +65,6 @@
 #define BTN_2_PIN A1
 #define BTN_3_PIN A0
 
-#ifdef UB_STEP_PRD
-    #undef UB_STEP_PRD
-    #define UB_STEP_PRD 2000
-#endif
 
 /*--- Timing and counters ---*/
 
@@ -84,6 +83,8 @@
 /*--- Brightness control ---*/
 
 #define BRIGHTNESS_CTRL_PIN 3
+
+#define BRIGHTNESS_CTRL_STEP 5
 
 #define BRIGHTNESS_CTRL_MAX_VAL_PERCENT 100
 #define BRIGHTNESS_CTRL_MAX_VAL         255
@@ -183,8 +184,9 @@ namespace brightness_ctrl {
         int32_t set(uint32_t pwm_pin, uint8_t val_percent);
         int32_t reduce(uint32_t pwm_pin,
                        uint8_t& current_val_percent,
-                       uint8_t reduction_val_percent = 5);
+                       uint8_t reduction_val_percent = BRIGHTNESS_CTRL_STEP);
     }
+    void set_pwm_freq_low_level();
 }
 
 
@@ -239,32 +241,6 @@ void setup()
     #ifdef ANTI_GHOSTING_RETENTION_DURATION
     Drv7Seg.set_anti_ghosting_retention_duration(ANTI_GHOSTING_RETENTION_DURATION);
     #endif
-
-
-    /*--- Brightness control pin configuration ---*/
-
-    pinMode(BRIGHTNESS_CTRL_PIN, OUTPUT);
-        // --- Configure Timer2 for fast PWM on OC2B (pin 3) ---
-
-    // Stop Timer2
-    TCCR2A = 0;
-    TCCR2B = 0;
-
-    // Fast PWM, 8-bit: WGM22:0 = 0b011 (modes 3)
-    // WGM21 = 1, WGM20 = 1
-    TCCR2A |= (1 << WGM21) | (1 << WGM20);
-    // WGM22 stays 0 in TCCR2B
-
-    // Non-inverting mode on OC2B (pin 3): COM2B1 = 1, COM2B0 = 0
-    TCCR2A |= (1 << COM2B1);
-
-    // Prescaler = 1: CS22:0 = 0b001
-    //TCCR2B |= (1 << CS20);  // CS20 = 1, CS21 = 0, CS22 = 0
-
-    // Prescaler = 8, CS22:0 = 0b010
-    TCCR2B |= (1 << CS21);  
-
-    brightness_ctrl::percent::set(BRIGHTNESS_CTRL_PIN, 5);
 }
 
 void loop()
@@ -294,9 +270,16 @@ void loop()
     static uint8_t only_dot_on = SegMap595.turn_on_dot(blank);  // Indicate that clock is on.
 
 
-    /*--- Brightness control ---*/
+    /*--- Brightness control initialization ---*/
 
     static uint8_t brightness_current_val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT;
+    static bool brightness_ctrl_init_flag = false;
+    if (!brightness_ctrl_init_flag) {
+        brightness_ctrl::set_pwm_freq_low_level();
+        pinMode(BRIGHTNESS_CTRL_PIN, OUTPUT);
+        brightness_ctrl::percent::set(BRIGHTNESS_CTRL_PIN, brightness_current_val_percent);
+        brightness_ctrl_init_flag = true;
+    }
 
 
     /*--- Counters and update triggers ---*/
@@ -629,11 +612,11 @@ int32_t brightness_ctrl::percent::set(uint32_t pwm_pin, uint8_t val_percent)
         return BRIGHTNESS_CTRL_ERR_VAL;
     }
 
-    // Invertion is necessary because 595's output is enabled when its OE pin is pulled to LOW. 
+    // Invertion is necessary because 595's output is enabled when its OE pin is pulled to LOW.
     uint8_t val_percent_inverted = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - val_percent;
     uint8_t val = (val_percent_inverted * 255 + 50) / 100;
-
     analogWrite(pwm_pin, val);
+
     Serial.print("Brightness level set to ");
     Serial.println(val_percent);
 
@@ -659,4 +642,20 @@ int32_t brightness_ctrl::percent::reduce(uint32_t pwm_pin,
     current_val_percent = val_percent;
 
     return BRIGHTNESS_CTRL_OK;
+}
+
+void brightness_ctrl::set_pwm_freq_low_level()  // Set PWM frequency to ~7.8 kHz.
+{
+    // Stop Timer2.
+    TCCR2A = 0;
+    TCCR2B = 0;
+
+    // Fast PWM, 8-bit: WGM22:0 = 0b011 (modes 3).
+    TCCR2A |= (1 << WGM21) | (1 << WGM20);
+
+    // Non-inverting mode on OC2B (pin 3): COM2B1 = 1, COM2B0 = 0
+    TCCR2A |= (1 << COM2B1);
+
+    // Prescaler = 8, CS22:0 = 0b010
+    TCCR2B |= (1 << CS21);
 }
