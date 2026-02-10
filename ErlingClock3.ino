@@ -24,9 +24,6 @@
 #include <SegMap595.h>
 
 // Buttons.
-#define UB_STEP_PRD 400  /* Impulse increment period length in milliseconds, affects step() method.
-                          * Has to be defined before the respective 'include' directive.
-                          */
 #include <uButton.h>
 
 // DS3231 RTC interfacing.
@@ -45,7 +42,6 @@
 #define POS_2_PIN 11
 #define POS_3_PIN 12
 #define POS_4_PIN 9
-
 
 /* Not strictly necessary, but it's a guard against ripple caused by
  * gaps in multiplexing that occur due to long-ish I/O.
@@ -84,13 +80,13 @@
 
 #define BRIGHTNESS_CTRL_PIN 3
 
-#define BRIGHTNESS_CTRL_STEP 5
-
 #define BRIGHTNESS_CTRL_MAX_VAL_PERCENT 100
 #define BRIGHTNESS_CTRL_MAX_VAL         255
 
-#define BRIGHTNESS_CTRL_ERR_VAL -1
-#define BRIGHTNESS_CTRL_OK       0
+#define BRIGHTNESS_CTRL_LVL_4 BRIGHTNESS_CTRL_MAX_VAL_PERCENT
+#define BRIGHTNESS_CTRL_LVL_3 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 2
+#define BRIGHTNESS_CTRL_LVL_2 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 4
+#define BRIGHTNESS_CTRL_LVL_1 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 20
 
 
 /*--- Misc ---*/
@@ -180,14 +176,11 @@ namespace modes {
 /*--- Brightness control ---*/
 
 namespace brightness_ctrl {
-    namespace percent {
-        int32_t set(uint32_t pwm_pin, uint8_t val_percent);
-        int32_t reduce(uint32_t pwm_pin,
-                       uint8_t& current_val_percent,
-                       uint8_t reduction_val_percent = BRIGHTNESS_CTRL_STEP
-                      );
-    }
     void set_pwm_freq_low_level();
+
+    namespace percent {
+        void set(uint32_t pwm_pin, uint8_t val_percent);
+    }
 }
 
 
@@ -271,14 +264,14 @@ void loop()
     static uint8_t only_dot_on = SegMap595.turn_on_dot(blank);  // Indicate that clock is on.
 
 
-    /*--- Brightness control initialization ---*/
+    /*--- Brightness control ---*/
 
-    static uint8_t brightness_current_val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT;
+    static uint8_t brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_4;
     static bool brightness_ctrl_init_flag = false;
     if (!brightness_ctrl_init_flag) {
         brightness_ctrl::set_pwm_freq_low_level();
         pinMode(BRIGHTNESS_CTRL_PIN, OUTPUT);
-        brightness_ctrl::percent::set(BRIGHTNESS_CTRL_PIN, brightness_current_val_percent);
+        brightness_ctrl::percent::set(BRIGHTNESS_CTRL_PIN, brightness_ctrl_current_lvl);
         brightness_ctrl_init_flag = true;
     }
 
@@ -407,8 +400,23 @@ void loop()
     /*--- Brightness control, continued ---*/
 
     if (btn_2.tick()) {
-        if (btn_2.press() || btn_2.step()) {
-            brightness_ctrl::percent::reduce(BRIGHTNESS_CTRL_PIN, brightness_current_val_percent);
+        if (btn_2.press()) {
+            switch (brightness_ctrl_current_lvl) {
+                case BRIGHTNESS_CTRL_LVL_4:
+                    brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_3;
+                    break;
+                case BRIGHTNESS_CTRL_LVL_3:
+                    brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_2;
+                    break;
+                case BRIGHTNESS_CTRL_LVL_2:
+                    brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_1;
+                    break;
+                case BRIGHTNESS_CTRL_LVL_1:
+                    brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_4;
+                    break;
+            }
+
+            brightness_ctrl::percent::set(BRIGHTNESS_CTRL_PIN, brightness_ctrl_current_lvl);
         }
     }
 
@@ -607,42 +615,21 @@ void modes::time_setting::loop(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
     }
 }
 
-int32_t brightness_ctrl::percent::set(uint32_t pwm_pin, uint8_t val_percent)
+void brightness_ctrl::percent::set(uint32_t pwm_pin, uint8_t val_percent)
 {
     if (val_percent > BRIGHTNESS_CTRL_MAX_VAL_PERCENT) {
-        return BRIGHTNESS_CTRL_ERR_VAL;
+        val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT;
     }
 
     // Invertion is necessary because 595's output is enabled when its OE pin is pulled to LOW.
     uint8_t val_percent_inverted = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - val_percent;
-    uint8_t val = (val_percent_inverted * 255 + 50) / 100;
+    uint8_t val = (val_percent_inverted * BRIGHTNESS_CTRL_MAX_VAL + (BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 2)) /
+                  BRIGHTNESS_CTRL_MAX_VAL_PERCENT;
     analogWrite(pwm_pin, val);
 
-    Serial.print("Brightness level set to ");
-    Serial.println(val_percent);
-
-    return BRIGHTNESS_CTRL_OK;
-}
-
-int32_t brightness_ctrl::percent::reduce(uint32_t pwm_pin,
-                                         uint8_t& current_val_percent,
-                                         uint8_t reduction_val_percent)
-{
-    if (reduction_val_percent == 0 || reduction_val_percent > BRIGHTNESS_CTRL_MAX_VAL_PERCENT) {
-        return BRIGHTNESS_CTRL_ERR_VAL;
-    }
-
-    uint8_t val_percent = 0;
-    if (current_val_percent >= reduction_val_percent) {
-        val_percent = current_val_percent - reduction_val_percent;  // Wraparound.
-    } else {
-        val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - (reduction_val_percent - current_val_percent);
-    }
-
-    brightness_ctrl::percent::set(pwm_pin, val_percent);
-    current_val_percent = val_percent;
-
-    return BRIGHTNESS_CTRL_OK;
+    Serial.print("Brightness set to ");
+    Serial.print(val_percent);
+    Serial.println("%");
 }
 
 void brightness_ctrl::set_pwm_freq_low_level()  // Set PWM frequency to ~7.8 kHz.
@@ -654,9 +641,9 @@ void brightness_ctrl::set_pwm_freq_low_level()  // Set PWM frequency to ~7.8 kHz
     // Fast PWM, 8-bit: WGM22:0 = 0b011 (modes 3).
     TCCR2A |= (1 << WGM21) | (1 << WGM20);
 
-    // Non-inverting mode on OC2B (pin 3): COM2B1 = 1, COM2B0 = 0
+    // Non-inverting mode on OC2B (pin 3): COM2B1 = 1, COM2B0 = 0.
     TCCR2A |= (1 << COM2B1);
 
-    // Prescaler = 8, CS22:0 = 0b010
+    // Prescaler = 8, CS22:0 = 0b010.
     TCCR2B |= (1 << CS21);
 }
