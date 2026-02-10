@@ -83,10 +83,12 @@
 #define BRIGHTNESS_CTRL_MAX_VAL_PERCENT 100
 #define BRIGHTNESS_CTRL_MAX_VAL         255
 
-#define BRIGHTNESS_CTRL_LVL_4 BRIGHTNESS_CTRL_MAX_VAL_PERCENT
-#define BRIGHTNESS_CTRL_LVL_3 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 2
-#define BRIGHTNESS_CTRL_LVL_2 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 4
-#define BRIGHTNESS_CTRL_LVL_1 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 20
+#define BRIGHTNESS_CTRL_LVL_6 BRIGHTNESS_CTRL_MAX_VAL_PERCENT
+#define BRIGHTNESS_CTRL_LVL_5 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 2
+#define BRIGHTNESS_CTRL_LVL_4 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 4
+#define BRIGHTNESS_CTRL_LVL_3 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 20
+#define BRIGHTNESS_CTRL_LVL_2 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 50
+#define BRIGHTNESS_CTRL_LVL_1 BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 100
 
 
 /*--- Misc ---*/
@@ -266,7 +268,7 @@ void loop()
 
     /*--- Brightness control ---*/
 
-    static uint8_t brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_4;
+    static uint8_t brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_6;
     static bool brightness_ctrl_init_flag = false;
     if (!brightness_ctrl_init_flag) {
         brightness_ctrl::set_pwm_freq_low_level();
@@ -402,6 +404,12 @@ void loop()
     if (btn_2.tick()) {
         if (btn_2.press()) {
             switch (brightness_ctrl_current_lvl) {
+                case BRIGHTNESS_CTRL_LVL_6:
+                    brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_5;
+                    break;
+                case BRIGHTNESS_CTRL_LVL_5:
+                    brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_4;
+                    break;
                 case BRIGHTNESS_CTRL_LVL_4:
                     brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_3;
                     break;
@@ -412,7 +420,7 @@ void loop()
                     brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_1;
                     break;
                 case BRIGHTNESS_CTRL_LVL_1:
-                    brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_4;
+                    brightness_ctrl_current_lvl = BRIGHTNESS_CTRL_LVL_6;
                     break;
             }
 
