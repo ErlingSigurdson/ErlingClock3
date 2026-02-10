@@ -184,7 +184,8 @@ namespace brightness_ctrl {
         int32_t set(uint32_t pwm_pin, uint8_t val_percent);
         int32_t reduce(uint32_t pwm_pin,
                        uint8_t& current_val_percent,
-                       uint8_t reduction_val_percent = BRIGHTNESS_CTRL_STEP);
+                       uint8_t reduction_val_percent = BRIGHTNESS_CTRL_STEP
+                      );
     }
     void set_pwm_freq_low_level();
 }
