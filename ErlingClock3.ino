@@ -278,7 +278,7 @@ void loop()
 
     /*--- Brightness control ---*/
 
-    static uint8_t brightness_ctrl_current_lvl = BrightnessLvl6;
+    static uint8_t brightness_ctrl_current_lvl = static_cast<uint8_t>(BrightnessLvl6);
     static bool brightness_ctrl_init_flag = false;
     if (!brightness_ctrl_init_flag) {
         brightness_ctrl::set_pwm_freq_low_level();
