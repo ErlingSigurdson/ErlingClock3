@@ -191,7 +191,7 @@ namespace brightness_ctrl {
     void set_pwm_freq_low_level();
 
     namespace percent {
-        void set(uint32_t pwm_pin, uint8_t val_percent);
+        void set(uint8_t val_percent);
     }
 }
 
@@ -283,7 +283,7 @@ void loop()
     if (!brightness_ctrl_init_flag) {
         brightness_ctrl::set_pwm_freq_low_level();
         pinMode(BRIGHTNESS_CTRL_PIN, OUTPUT);
-        brightness_ctrl::percent::set(BRIGHTNESS_CTRL_PIN, brightness_ctrl_current_lvl);
+        brightness_ctrl::percent::set(brightness_ctrl_current_lvl);
         brightness_ctrl_init_flag = true;
     }
 
@@ -444,7 +444,7 @@ void loop()
                     break;
             }
 
-            brightness_ctrl::percent::set(BRIGHTNESS_CTRL_PIN, brightness_ctrl_current_lvl);
+            brightness_ctrl::percent::set(brightness_ctrl_current_lvl);
         }
     }
 
@@ -579,7 +579,7 @@ void modes::time_setting::loop(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
                               )
 {
     current_time = {};  // Assign all-zero values.
-    bool update_output_due_local = true;
+    bool _update_output_due = true;
 
     while (true) {
         Drv7Seg.output_all();
@@ -602,7 +602,7 @@ void modes::time_setting::loop(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
                 current_time.raw.hours++;
                 // Handy for debugging.
                 //current_time.raw.minutes++;
-                update_output_due_local = true;
+                _update_output_due = true;
             }
         }
 
@@ -611,14 +611,14 @@ void modes::time_setting::loop(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
                 current_time.raw.minutes++;
                 // Handy for debugging.
                 //current_time.raw.seconds++;
-                update_output_due_local = true;
+                _update_output_due = true;
             }
         }
 
 
         /*--- Output values update ---*/
 
-        if (update_output_due_local) {
+        if (_update_output_due) {
             current_time.apply_max_count();
             current_time.decompose_by_digits();
 
@@ -640,12 +640,12 @@ void modes::time_setting::loop(GyverDS3231Min& GyverRTC, CurrentTime& current_ti
             Drv7Seg.set_glyph_to_pos(seg_byte_pos_3, Drv7SegPos3);
             Drv7Seg.set_glyph_to_pos(seg_byte_pos_4, Drv7SegPos4);
 
-            update_output_due_local = false;
+            _update_output_due = false;
         }
     }
 }
 
-void brightness_ctrl::percent::set(uint32_t pwm_pin, uint8_t val_percent)
+void brightness_ctrl::percent::set(uint8_t val_percent)
 {
     if (val_percent > BRIGHTNESS_CTRL_MAX_VAL_PERCENT) {
         val_percent = BRIGHTNESS_CTRL_MAX_VAL_PERCENT;
@@ -655,7 +655,7 @@ void brightness_ctrl::percent::set(uint32_t pwm_pin, uint8_t val_percent)
     uint8_t val_percent_inverted = BRIGHTNESS_CTRL_MAX_VAL_PERCENT - val_percent;
     uint8_t val = (val_percent_inverted * BRIGHTNESS_CTRL_MAX_VAL + (BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 2)) /
                   BRIGHTNESS_CTRL_MAX_VAL_PERCENT;
-    analogWrite(pwm_pin, val);
+    OCR2B = val;
 
     Serial.print("Brightness set to ");
     Serial.print(val_percent);
