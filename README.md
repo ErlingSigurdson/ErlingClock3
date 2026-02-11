@@ -24,7 +24,7 @@ a set of 4 GPIO-driven transistors.
 
 It's like on this picture (taken from a [similar project](https://github.com/ErlingSigurdson/ErlingClock1)),
 but it differs in which microcontroller pins are used and in the wiring order between the display and the 595.
-It's all reflected in the sketch.
+Also the project has an additional connection for brightness control. It's all reflected in the sketch.
 
 As it's drawn, the schematic is far from perfect anyway: base drive resistors should have higher values, pull-down
 resistors should be added to bases, etc. But hey, it works.
