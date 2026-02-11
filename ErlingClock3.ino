@@ -141,13 +141,15 @@ struct CurrentTime {
 };
 
 enum BrightnessLvl : uint8_t {  // Not 'enum class' to simplify integer arithmetics.
-    Lvl5 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT,
-    Lvl4 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 2,
-    Lvl3 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 4,
+    Lvl6 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT,
+    Lvl5 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 2,
+    Lvl4 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 4,
+    Lvl3 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 10,
     Lvl2 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 20,
     Lvl1 = BRIGHTNESS_CTRL_MAX_VAL_PERCENT / 50
 };
 
+constexpr BrightnessLvl BrightnessLvl6 = BrightnessLvl::Lvl6;
 constexpr BrightnessLvl BrightnessLvl5 = BrightnessLvl::Lvl5;
 constexpr BrightnessLvl BrightnessLvl4 = BrightnessLvl::Lvl4;
 constexpr BrightnessLvl BrightnessLvl3 = BrightnessLvl::Lvl3;
@@ -282,7 +284,7 @@ void loop()
 
     /*--- Brightness control ---*/
 
-    static uint8_t brightness_ctrl_current_lvl = BrightnessLvl5;
+    static uint8_t brightness_ctrl_current_lvl = BrightnessLvl6;
     static bool brightness_ctrl_init_flag = false;
     if (!brightness_ctrl_init_flag) {
         brightness_ctrl::set_pwm_freq_low_level();
@@ -418,20 +420,32 @@ void loop()
     if (btn_2.tick()) {
         if (btn_2.press()) {
             switch (brightness_ctrl_current_lvl) {
+                case BrightnessLvl6:
+                    brightness_ctrl_current_lvl = BrightnessLvl5;
+                    break;
+
                 case BrightnessLvl5:
                     brightness_ctrl_current_lvl = BrightnessLvl4;
                     break;
+
                 case BrightnessLvl4:
                     brightness_ctrl_current_lvl = BrightnessLvl3;
                     break;
+
                 case BrightnessLvl3:
                     brightness_ctrl_current_lvl = BrightnessLvl2;
                     break;
+
                 case BrightnessLvl2:
                     brightness_ctrl_current_lvl = BrightnessLvl1;
                     break;
+
                 case BrightnessLvl1:
-                    brightness_ctrl_current_lvl = BrightnessLvl5;
+                    brightness_ctrl_current_lvl = BrightnessLvl6;
+                    break;
+
+                default:
+                    brightness_ctrl_current_lvl = BrightnessLvl6;
                     break;
             }
 
