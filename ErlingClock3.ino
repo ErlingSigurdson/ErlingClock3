@@ -90,7 +90,7 @@
 #define STRINGIFY(x) INTERMEDIATE_STRINGIFY(x)
 #define INTERMEDIATE_STRINGIFY(x) #x
 
-#define VERSION 2.0.0
+#define VERSION 2.1.0
 
 
 /****************** DATA TYPES ******************/
