@@ -272,7 +272,7 @@ void loop()
     /*--- Dark mode control ---*/
 
     static bool dark_mode_flag = false;
-    constexpr uint8_t blank = 0;
+    constexpr uint8_t blank = 0b00000000;
     static uint8_t only_dot_on = SegMap595.turn_on_dot(blank);  // Indicate that clock is on.
 
 
