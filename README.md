@@ -24,7 +24,8 @@ a set of 4 GPIO-driven transistors.
 
 It's like on this picture (taken from a [similar project](https://github.com/ErlingSigurdson/ErlingClock1)),
 but it differs in which microcontroller pins are used and in the wiring order between the display and the 595.
-Also the project has an additional connection for brightness control. It's all reflected in the sketch.
+The project also has an additional connection between the 595’s OE (output enable) pin and one of the GPIO pins,
+which allows for brightness control via PWM. It's all reflected in the sketch.
 
 As it's drawn, the schematic is far from perfect anyway: base drive resistors should have higher values, pull-down
 resistors should be added to bases, etc. But hey, it works.
@@ -33,7 +34,7 @@ resistors should be added to bases, etc. But hey, it works.
 
 ### Hint: charging circuit removal
 
-It is a common knowledge that most cheap DS3231 breakout boards have a backup battery charging circuit that is, first,
+It is common knowledge that most cheap DS3231 breakout boards have a backup battery charging circuit that is, first,
 designed for rechargeable batteries (like ML2032), and second, designed rather poorly. Since I use a non-rechargeable
 CR2032 battery, I followed a common advice and removed the diode and the resistor that constitute the said circuit
 (removing any of them would be enough, but I removed both anyway). I suspect that it improves battery health and makes
